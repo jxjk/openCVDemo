@@ -1,0 +1,1167 @@
+# -*- coding: utf-8 -*-
+"""
+Web界面模板 - 图纸标注版本
+Template for Web Interface - Drawing Annotation Version
+"""
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微小零件视觉检测系统 - 图纸标注</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+        
+        #drawingCanvas {
+            background-color: white;
+            border: 2px solid #dee2e6;
+            cursor: crosshair;
+            border-radius: 8px;
+        }
+        
+        .tool-btn {
+            width: 100%;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+        }
+        
+        .tool-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .tool-btn.active {
+            ring: 4px solid #667eea;
+            transform: scale(1.05);
+        }
+        
+        .annotation-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .annotation-item {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .annotation-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .annotation-item.selected {
+            background-color: #e7f3ff;
+            border-left: 4px solid #667eea;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .status-ok {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-ng {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        /* 模态框样式 */
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #653a91 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-microscope"></i> 微小零件视觉检测系统
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home"></i> 首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-drafting-compass"></i> 图纸标注</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="navInspection"><i class="fas fa-search"></i> 检测</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="navResults"><i class="fas fa-chart-bar"></i> 结果</a>
+                    </li>
+                </ul>
+                <span class="navbar-text">
+                    <i class="fas fa-user-circle"></i> 操作员
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border" role="status"></div>
+            <span class="ms-2">处理中...</span>
+        </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- 左侧：图纸显示区域 -->
+            <div class="col-lg-8">
+                <!-- 操作按钮 -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary" id="btnLoadImage">
+                                <i class="fas fa-image"></i> 加载图纸
+                            </button>
+                            <button class="btn btn-outline-secondary" id="btnImportDXF">
+                                <i class="fas fa-file-import"></i> 导入DXF
+                            </button>
+                            <button class="btn btn-outline-success" id="btnLoadTemplate">
+                                <i class="fas fa-file-code"></i> 加载模板
+                            </button>
+                            <button class="btn btn-outline-info" id="btnSaveTemplate">
+                                <i class="fas fa-save"></i> 保存模板
+                            </button>
+                            <button class="btn btn-outline-warning" id="btnClearAnnotations">
+                                <i class="fas fa-trash"></i> 清空标注
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图纸显示画布 -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-drafting-compass"></i> 图纸标注区域
+                    </div>
+                    <div class="card-body">
+                        <canvas id="drawingCanvas" width="800" height="600"></canvas>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-secondary" id="btnZoomIn">
+                                <i class="fas fa-search-plus"></i> 放大
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" id="btnZoomOut">
+                                <i class="fas fa-search-minus"></i> 缩小
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" id="btnFitWindow">
+                                <i class="fas fa-expand"></i> 适应窗口
+                            </button>
+                            <span class="ms-3" id="scaleDisplay">缩放: 100%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：工具和标注列表 -->
+            <div class="col-lg-4">
+                <!-- 标注工具 -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <i class="fas fa-tools"></i> 标注工具
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button class="btn btn-success tool-btn" data-tool="diameter">
+                                    <i class="fas fa-circle"></i> 标注直径
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-primary tool-btn" data-tool="radius">
+                                    <i class="fas fa-dot-circle"></i> 标注半径
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-warning tool-btn" data-tool="length">
+                                    <i class="fas fa-ruler-horizontal"></i> 标注长度
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-info tool-btn" data-tool="width">
+                                    <i class="fas fa-ruler-vertical"></i> 标注宽度
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-secondary tool-btn" data-tool="height">
+                                    <i class="fas fa-arrows-alt-v"></i> 标注高度
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-danger tool-btn" data-tool="angle">
+                                    <i class="fas fa-angle-right"></i> 标注角度
+                                </button>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-grid">
+                            <button class="btn btn-outline-dark" id="btnCancel">
+                                <i class="fas fa-times"></i> 取消当前标注
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 标注列表 -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <i class="fas fa-list"></i> 标注列表
+                        <span class="badge bg-light text-dark float-end" id="annotationCount">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="annotation-list" id="annotationList">
+                            <div class="text-center text-muted p-3">
+                                <i class="fas fa-inbox fa-3x"></i>
+                                <p class="mt-2">暂无标注</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100">
+                            <button class="btn btn-outline-primary" id="btnEditAnnotation">
+                                <i class="fas fa-edit"></i> 编辑
+                            </button>
+                            <button class="btn btn-outline-danger" id="btnDeleteAnnotation">
+                                <i class="fas fa-trash"></i> 删除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模板信息 -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle"></i> 模板信息
+                    </div>
+                    <div class="card-body">
+                        <form id="templateForm">
+                            <div class="mb-3">
+                                <label for="templateName" class="form-label">模板名称</label>
+                                <input type="text" class="form-control" id="templateName" placeholder="输入模板名称">
+                            </div>
+                            <div class="mb-3">
+                                <label for="imageScale" class="form-label">图像比例 (像素/毫米)</label>
+                                <input type="number" class="form-control" id="imageScale" step="0.001" placeholder="输入比例">
+                            </div>
+                            <div class="mb-3">
+                                <label for="toleranceStandard" class="form-label">公差标准</label>
+                                <select class="form-select" id="toleranceStandard">
+                                    <option value="IT8">IT8 (中等高精度)</option>
+                                    <option value="IT7">IT7 (高精度)</option>
+                                    <option value="IT11">IT11 (低精度)</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 参数编辑模态框 -->
+    <div class="modal fade" id="annotationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑标注参数</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="annotationForm">
+                        <div class="mb-3">
+                            <label for="annoType" class="form-label">标注类型</label>
+                            <input type="text" class="form-control" id="annoType" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nominalValue" class="form-label">标称值 (mm)</label>
+                            <input type="number" class="form-control" id="nominalValue" step="0.001" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label for="tolerance" class="form-label">公差 (mm)</label>
+                            <input type="number" class="form-control" id="tolerance" step="0.001" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">描述</label>
+                            <textarea class="form-control" id="description" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveAnnotation">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示框 -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong class="me-auto">提示</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    
+    <script>
+        // 全局变量
+        let currentTool = null;
+        let drawingPoints = [];
+        let currentScale = 1.0;
+        let image = null;
+        let annotations = [];
+        let selectedAnnotationId = null;
+        
+        // Canvas相关
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initCanvas();
+            bindEvents();
+        });
+        
+        // 初始化Canvas
+        function initCanvas() {
+            // 设置Canvas大小
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 绘制初始状态
+            drawCanvas();
+        }
+        
+        // 调整Canvas大小
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const maxWidth = container.clientWidth - 32;
+            const maxHeight = window.innerHeight * 0.6;
+            
+            canvas.width = maxWidth;
+            canvas.height = maxHeight;
+            
+            drawCanvas();
+        }
+        
+        // 绑定事件
+        function bindEvents() {
+            // 工具按钮
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    setTool(this.dataset.tool);
+                });
+            });
+            
+            // 操作按钮
+            document.getElementById('btnLoadImage').addEventListener('click', loadImage);
+            document.getElementById('btnImportDXF').addEventListener('click', importDXF);
+            document.getElementById('btnLoadTemplate').addEventListener('click', loadTemplate);
+            document.getElementById('btnSaveTemplate').addEventListener('click', saveTemplate);
+            document.getElementById('btnClearAnnotations').addEventListener('click', clearAnnotations);
+            document.getElementById('btnCancel').addEventListener('click', cancelDrawing);
+            
+            // 缩放按钮
+            document.getElementById('btnZoomIn').addEventListener('click', () => {
+                currentScale = Math.min(currentScale * 1.2, 3.0);
+                updateScaleDisplay();
+                drawCanvas();
+            });
+            
+            document.getElementById('btnZoomOut').addEventListener('click', () => {
+                currentScale = Math.max(currentScale / 1.2, 0.1);
+                updateScaleDisplay();
+                drawCanvas();
+            });
+            
+            document.getElementById('btnFitWindow').addEventListener('click', fitToWindow);
+            
+            // 标注操作
+            document.getElementById('btnEditAnnotation').addEventListener('click', editAnnotation);
+            document.getElementById('btnDeleteAnnotation').addEventListener('click', deleteAnnotation);
+            document.getElementById('btnSaveAnnotation').addEventListener('click', saveAnnotation);
+            
+            // Canvas鼠标事件
+            canvas.addEventListener('click', onCanvasClick);
+            canvas.addEventListener('mousemove', onCanvasMouseMove);
+        }
+        
+        // 设置工具
+        function setTool(tool) {
+            currentTool = tool;
+            drawingPoints = [];
+            
+            // 更新按钮状态
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.tool === tool) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            showToast(`已选择: ${getToolName(tool)}工具`);
+        }
+        
+        // 获取工具名称
+        function getToolName(tool) {
+            const names = {
+                'diameter': '标注直径',
+                'radius': '标注半径',
+                'length': '标注长度',
+                'width': '标注宽度',
+                'height': '标注高度',
+                'angle': '标注角度'
+            };
+            return names[tool] || tool;
+        }
+        
+        // 加载图纸图像
+        function loadImage() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = new Image();
+                        img.onload = function() {
+                            image = img;
+                            fitToWindow();
+                            showToast('图纸加载成功！');
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+        
+        // 导入DXF文件
+        function importDXF() {
+            // 创建DXF导入对话框
+            const dialog = document.createElement('div');
+            dialog.className = 'modal fade';
+            dialog.id = 'dxfImportDialog';
+            dialog.innerHTML = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">导入DXF文件</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="dxfImportForm">
+                                <div class="mb-3">
+                                    <label for="dxfFile" class="form-label">选择DXF文件</label>
+                                    <input type="file" class="form-control" id="dxfFile" accept=".dxf" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="dxfTemplateName" class="form-label">模板名称</label>
+                                    <input type="text" class="form-control" id="dxfTemplateName" placeholder="输入模板名称">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="dxfToleranceStandard" class="form-label">公差标准</label>
+                                    <select class="form-select" id="dxfToleranceStandard">
+                                        <option value="IT8">IT8 (中等高精度)</option>
+                                        <option value="IT7">IT7 (高精度)</option>
+                                        <option value="IT5">IT5 (超高精度)</option>
+                                        <option value="IT11">IT11 (低精度)</option>
+                                    </select>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="autoExtractDimensions" checked>
+                                    <label class="form-check-label" for="autoExtractDimensions">
+                                        自动提取尺寸标注
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="autoIdentifyFeatures" checked>
+                                    <label class="form-check-label" for="autoIdentifyFeatures">
+                                        自动识别几何特征
+                                    </label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-primary" id="btnConfirmImport">导入</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(dialog);
+            
+            const modal = new bootstrap.Modal(dialog);
+            modal.show();
+            
+            // 绑定导入按钮事件
+            document.getElementById('btnConfirmImport').addEventListener('click', async function() {
+                const fileInput = document.getElementById('dxfFile');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    showToast('请选择DXF文件');
+                    return;
+                }
+                
+                if (!file.name.toLowerCase().endsWith('.dxf')) {
+                    showToast('请上传DXF格式文件');
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('template_name', document.getElementById('dxfTemplateName').value || file.name);
+                formData.append('tolerance_standard', document.getElementById('dxfToleranceStandard').value);
+                formData.append('auto_extract_dimensions', document.getElementById('autoExtractDimensions').checked);
+                formData.append('auto_identify_features', document.getElementById('autoIdentifyFeatures').checked);
+                
+                try {
+                    showLoading();
+                    
+                    const response = await fetch('/api/dxf/import', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    hideLoading();
+                    
+                    if (result.success) {
+                        annotations = result.template.annotations;
+                        document.getElementById('templateName').value = result.template.name;
+                        document.getElementById('imageScale').value = result.template.imageScale;
+                        document.getElementById('toleranceStandard').value = result.template.toleranceStandard;
+                        
+                        updateAnnotationList();
+                        showToast(`DXF导入成功！提取了 ${result.annotations_count} 个标注`);
+                        modal.hide();
+                    } else {
+                        showToast('DXF导入失败: ' + result.error);
+                    }
+                } catch (error) {
+                    hideLoading();
+                    showToast('DXF导入失败: ' + error.message);
+                }
+            });
+            
+            // 对话框关闭时移除
+            dialog.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(dialog);
+            });
+        }
+        
+        // 加载模板
+        function loadTemplate() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        try {
+                            const template = JSON.parse(event.target.result);
+                            annotations = template.annotations || [];
+                            document.getElementById('templateName').value = template.name || '';
+                            document.getElementById('imageScale').value = template.imageScale || 1.0;
+                            document.getElementById('toleranceStandard').value = template.toleranceStandard || 'IT8';
+                            
+                            updateAnnotationList();
+                            drawCanvas();
+                            showToast('模板加载成功！');
+                        } catch (error) {
+                            showToast('模板加载失败：' + error.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+        
+        // 保存模板
+        function saveTemplate() {
+            const template = {
+                name: document.getElementById('templateName').value || '未命名模板',
+                version: '1.0',
+                createdDate: new Date().toISOString(),
+                updatedDate: new Date().toISOString(),
+                imageScale: parseFloat(document.getElementById('imageScale').value) || 1.0,
+                toleranceStandard: document.getElementById('toleranceStandard').value || 'IT8',
+                annotations: annotations
+            };
+            
+            const blob = new Blob([JSON.stringify(template, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = template.name + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('模板保存成功！');
+        }
+        
+        // 清空标注
+        function clearAnnotations() {
+            if (confirm('确定要清空所有标注吗？')) {
+                annotations = [];
+                drawingPoints = [];
+                updateAnnotationList();
+                drawCanvas();
+                showToast('标注已清空');
+            }
+        }
+        
+        // 取消当前绘制
+        function cancelDrawing() {
+            drawingPoints = [];
+            currentTool = null;
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            drawCanvas();
+        }
+        
+        // Canvas点击事件
+        function onCanvasClick(e) {
+            if (!currentTool || !image) {
+                if (!image) {
+                    showToast('请先加载图纸图像');
+                }
+                return;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / currentScale;
+            const y = (e.clientY - rect.top) / currentScale;
+            
+            drawingPoints.push({x, y});
+            
+            // 根据工具类型处理
+            if (currentTool === 'diameter' || currentTool === 'radius') {
+                // 圆形标注需要2个点
+                if (drawingPoints.length === 2) {
+                    addCircleAnnotation();
+                }
+            } else if (currentTool === 'length' || currentTool === 'width' || currentTool === 'height') {
+                // 线段标注需要2个点
+                if (drawingPoints.length === 2) {
+                    addLineAnnotation();
+                }
+            } else if (currentTool === 'angle') {
+                // 角度标注需要3个点
+                if (drawingPoints.length === 3) {
+                    addAngleAnnotation();
+                }
+            }
+            
+            drawCanvas();
+        }
+        
+        // Canvas鼠标移动事件
+        function onCanvasMouseMove(e) {
+            if (!currentTool || !image || drawingPoints.length === 0) {
+                return;
+            }
+            
+            // 可以在这里添加实时预览
+            drawCanvas();
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / currentScale;
+            const y = (e.clientY - rect.top) / currentScale;
+            
+            // 绘制预览
+            ctx.save();
+            ctx.scale(currentScale, currentScale);
+            ctx.strokeStyle = '#667eea';
+            ctx.setLineDash([5, 5]);
+            
+            if (currentTool === 'diameter' || currentTool === 'radius') {
+                // 圆形预览
+                const center = drawingPoints[0];
+                const radius = Math.sqrt(Math.pow(x - center.x, 2) + Math.pow(y - center.y, 2));
+                ctx.beginPath();
+                ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+            } else if (currentTool === 'length' || currentTool === 'width' || currentTool === 'height') {
+                // 线段预览
+                const start = drawingPoints[0];
+                ctx.beginPath();
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+        
+        // 添加圆形标注
+        function addCircleAnnotation() {
+            const center = drawingPoints[0];
+            const edge = drawingPoints[1];
+            const radius = Math.sqrt(Math.pow(edge.x - center.x, 2) + Math.pow(edge.y - center.y, 2));
+            
+            const nominalValue = prompt(`请输入标称${currentTool === 'diameter' ? '直径' : '半径'} (mm):`);
+            
+            if (nominalValue !== null) {
+                const annotation = {
+                    id: generateId(),
+                    type: currentTool,
+                    center: center,
+                    radius: radius,
+                    nominalValue: parseFloat(nominalValue),
+                    tolerance: 0,
+                    toleranceStandard: document.getElementById('toleranceStandard').value,
+                    description: ''
+                };
+                
+                annotations.push(annotation);
+                updateAnnotationList();
+            }
+            
+            drawingPoints = [];
+            currentTool = null;
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+        
+        // 添加线段标注
+        function addLineAnnotation() {
+            const start = drawingPoints[0];
+            const end = drawingPoints[1];
+            
+            const nominalValue = prompt(`请输入标称${getToolName(currentTool).replace('标注', '')} (mm):`);
+            
+            if (nominalValue !== null) {
+                const annotation = {
+                    id: generateId(),
+                    type: currentTool,
+                    start: start,
+                    end: end,
+                    nominalValue: parseFloat(nominalValue),
+                    tolerance: 0,
+                    toleranceStandard: document.getElementById('toleranceStandard').value,
+                    description: ''
+                };
+                
+                annotations.push(annotation);
+                updateAnnotationList();
+            }
+            
+            drawingPoints = [];
+            currentTool = null;
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+        
+        // 添加角度标注
+        function addAngleAnnotation() {
+            const vertex = drawingPoints[0];
+            const startPoint = drawingPoints[1];
+            const endPoint = drawingPoints[2];
+            
+            const nominalValue = prompt('请输入标称角度 (度):');
+            
+            if (nominalValue !== null) {
+                const annotation = {
+                    id: generateId(),
+                    type: 'angle',
+                    vertex: vertex,
+                    startPoint: startPoint,
+                    endPoint: endPoint,
+                    nominalValue: parseFloat(nominalValue),
+                    tolerance: 0,
+                    toleranceStandard: document.getElementById('toleranceStandard').value,
+                    description: ''
+                };
+                
+                annotations.push(annotation);
+                updateAnnotationList();
+            }
+            
+            drawingPoints = [];
+            currentTool = null;
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+        
+        // 绘制Canvas
+        function drawCanvas() {
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制背景
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (!image) {
+                // 显示提示文字
+                ctx.fillStyle = '#999999';
+                ctx.font = '20px Microsoft YaHei';
+                ctx.textAlign = 'center';
+                ctx.fillText('请加载图纸图像', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+            
+            ctx.save();
+            ctx.scale(currentScale, currentScale);
+            
+            // 绘制图像
+            ctx.drawImage(image, 0, 0);
+            
+            // 绘制所有标注
+            annotations.forEach(annotation => {
+                drawAnnotation(annotation);
+            });
+            
+            ctx.restore();
+        }
+        
+        // 绘制单个标注
+        function drawAnnotation(annotation) {
+            const isSelected = annotation.id === selectedAnnotationId;
+            
+            ctx.lineWidth = isSelected ? 3 : 2;
+            ctx.strokeStyle = isSelected ? '#667eea' : getAnnotationColor(annotation.type);
+            
+            if (annotation.type === 'diameter' || annotation.type === 'radius') {
+                // 绘制圆形
+                ctx.beginPath();
+                ctx.arc(annotation.center.x, annotation.center.y, annotation.radius, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                // 绘制圆心
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.beginPath();
+                ctx.arc(annotation.center.x, annotation.center.y, 3, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // 绘制标注文字
+                if (annotation.nominalValue) {
+                    ctx.fillStyle = ctx.strokeStyle;
+                    ctx.font = '12px Microsoft YaHei';
+                    ctx.textAlign = 'center';
+                    const text = `${annotation.type === 'diameter' ? 'φ' : 'r'}${annotation.nominalValue.toFixed(3)}`;
+                    ctx.fillText(text, annotation.center.x, annotation.center.y - annotation.radius - 10);
+                }
+            } else if (annotation.type === 'length' || annotation.type === 'width' || annotation.type === 'height') {
+                // 绘制线段
+                ctx.beginPath();
+                ctx.moveTo(annotation.start.x, annotation.start.y);
+                ctx.lineTo(annotation.end.x, annotation.end.y);
+                ctx.stroke();
+                
+                // 绘制端点
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.beginPath();
+                ctx.arc(annotation.start.x, annotation.start.y, 3, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(annotation.end.x, annotation.end.y, 3, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // 绘制标注文字
+                if (annotation.nominalValue) {
+                    ctx.fillStyle = ctx.strokeStyle;
+                    ctx.font = '12px Microsoft YaHei';
+                    ctx.textAlign = 'center';
+                    const midX = (annotation.start.x + annotation.end.x) / 2;
+                    const midY = (annotation.start.y + annotation.end.y) / 2;
+                    const text = `${annotation.nominalValue.toFixed(3)}mm`;
+                    ctx.fillText(text, midX, midY - 10);
+                }
+            } else if (annotation.type === 'angle') {
+                // 绘制角度
+                ctx.beginPath();
+                ctx.moveTo(annotation.vertex.x, annotation.vertex.y);
+                ctx.lineTo(annotation.startPoint.x, annotation.startPoint.y);
+                ctx.moveTo(annotation.vertex.x, annotation.vertex.y);
+                ctx.lineTo(annotation.endPoint.x, annotation.endPoint.y);
+                ctx.stroke();
+                
+                // 绘制顶点
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.beginPath();
+                ctx.arc(annotation.vertex.x, annotation.vertex.y, 3, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+        
+        // 获取标注颜色
+        function getAnnotationColor(type) {
+            const colors = {
+                'diameter': '#4CAF50',
+                'radius': '#2196F3',
+                'length': '#FF9800',
+                'width': '#9C27B0',
+                'height': '#E91E63',
+                'angle': '#00BCD4'
+            };
+            return colors[type] || '#000000';
+        }
+        
+        // 更新标注列表
+        function updateAnnotationList() {
+            const list = document.getElementById('annotationList');
+            document.getElementById('annotationCount').textContent = annotations.length;
+            
+            if (annotations.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center text-muted p-3">
+                        <i class="fas fa-inbox fa-3x"></i>
+                        <p class="mt-2">暂无标注</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = annotations.map((annotation, index) => `
+                <div class="annotation-item ${annotation.id === selectedAnnotationId ? 'selected' : ''}" 
+                     data-id="${annotation.id}" data-index="${index}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-${getAnnotationIcon(annotation.type)}" 
+                               style="color: ${getAnnotationColor(annotation.type)}"></i>
+                            <span class="ms-2">${getToolName(annotation.type)}</span>
+                        </div>
+                        <span class="badge bg-light text-dark">
+                            ${annotation.nominalValue ? annotation.nominalValue.toFixed(3) + ' mm' : '--'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+            
+            // 绑定点击事件
+            list.querySelectorAll('.annotation-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    selectedAnnotationId = this.dataset.id;
+                    updateAnnotationList();
+                    drawCanvas();
+                });
+            });
+        }
+        
+        // 获取标注图标
+        function getAnnotationIcon(type) {
+            const icons = {
+                'diameter': 'circle',
+                'radius': 'dot-circle',
+                'length': 'ruler-horizontal',
+                'width': 'ruler-vertical',
+                'height': 'arrows-alt-v',
+                'angle': 'angle-right'
+            };
+            return icons[type] || 'question';
+        }
+        
+        // 编辑标注
+        function editAnnotation() {
+            if (!selectedAnnotationId) {
+                showToast('请先选择要编辑的标注');
+                return;
+            }
+            
+            const annotation = annotations.find(a => a.id === selectedAnnotationId);
+            if (!annotation) return;
+            
+            document.getElementById('annoType').value = getToolName(annotation.type);
+            document.getElementById('nominalValue').value = annotation.nominalValue || '';
+            document.getElementById('tolerance').value = annotation.tolerance || '';
+            document.getElementById('description').value = annotation.description || '';
+            
+            const modal = new bootstrap.Modal(document.getElementById('annotationModal'));
+            modal.show();
+        }
+        
+        // 保存标注编辑
+        function saveAnnotation() {
+            if (!selectedAnnotationId) return;
+            
+            const annotation = annotations.find(a => a.id === selectedAnnotationId);
+            if (!annotation) return;
+            
+            annotation.nominalValue = parseFloat(document.getElementById('nominalValue').value) || 0;
+            annotation.tolerance = parseFloat(document.getElementById('tolerance').value) || 0;
+            annotation.description = document.getElementById('description').value || '';
+            
+            updateAnnotationList();
+            drawCanvas();
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('annotationModal'));
+            modal.hide();
+            
+            showToast('标注参数已更新');
+        }
+        
+        // 删除标注
+        function deleteAnnotation() {
+            if (!selectedAnnotationId) {
+                showToast('请先选择要删除的标注');
+                return;
+            }
+            
+            if (confirm('确定要删除选中的标注吗？')) {
+                annotations = annotations.filter(a => a.id !== selectedAnnotationId);
+                selectedAnnotationId = null;
+                updateAnnotationList();
+                drawCanvas();
+                showToast('标注已删除');
+            }
+        }
+        
+        // 适应窗口
+        function fitToWindow() {
+            if (!image) return;
+            
+            const maxWidth = canvas.width;
+            const maxHeight = canvas.height;
+            
+            const scaleX = maxWidth / image.width;
+            const scaleY = maxHeight / image.height;
+            currentScale = Math.min(scaleX, scaleY) * 0.9;
+            
+            updateScaleDisplay();
+            drawCanvas();
+        }
+        
+        // 更新缩放显示
+        function updateScaleDisplay() {
+            document.getElementById('scaleDisplay').textContent = `缩放: ${(currentScale * 100).toFixed(0)}%`;
+        }
+        
+        // 生成ID
+        function generateId() {
+            return 'anno_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // 显示提示
+        function showToast(message) {
+            document.getElementById('toastMessage').textContent = message;
+            const toast = new bootstrap.Toast(document.getElementById('toast'));
+            toast.show();
+        }
+        
+        // 显示加载
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        
+        // 隐藏加载
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

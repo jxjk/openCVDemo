@@ -1,0 +1,44 @@
+DEFINE,VALUE,comment
+TB_modelTextStringSize,26,TB_modelの文字サイズ設定
+TextStringSize,24,テキストボックスコントロールの文字サイズ設定
+LabelStringSize,16,ラベルコントロールの文字サイズ設定
+ButtnStringSize,20,ボタンコントロールの文字サイズ設定
+TxtBorderStyle,0,テキストボックスの境界線オンオフ　１：オン　０：オフ
+DrawingFlg,1,図面オンオフ　１：図面表示　０：図面非表示
+DrawingBorderStype,1,図面の境界線オンオフ　１：オン　０：オフ
+DrawingWidth,50,図面の幅設定
+DrawingHeight,50,図面の高さ設定
+WaitTime_AfterSend,3,送信後の操作不能時間（sec）設定
+WaitTime_TB_Focus,5,TB_Barcodeからフォーカスが外れた後、元に戻るまでの時間（sec）設定
+TextMaxInputNum,4,テキストボックスへの入力文字数上限設定
+BarCodeHeaderStrNum,11,読み込んだバーコードの余分な文字列の長さ設定
+onofftxt,C:\macro\onoff.txt,onoff.txtの絶対アドレス設定
+macrotxt,C:\macro\macro.txt,macro.txtの絶対アドレス設定
+Btn_ChngPrm_text,加工方向,Btn_ChngPrmの表示設定
+Btn_keyboard_text,KeyBoard,Btn_keyboardの表示設定
+Btn_send_text,,Btn_sendの表示設定
+TB_alart_text_machineON,,機械稼働中のアラート表示文字設定
+TB_alart_text_send,,マクロ送信後に表示されるアラート表示文字設定
+MeasureValueLength,4,測定値の桁数（コンマ含む）の設定
+MeasureTextColor,blue,測定値入力用テキストボックスの背景色設定
+AutoSendFlg,1,自動送信フラグオンオフ　１：画面表示時、送信あり　０：画面表示時、送信なし
+Btn_add_text,連続入力,Btn_addの表示設定
+POInfoRecordFlg,1,読み込んだ型式情報記録オンオフフラグ　１：書き込み　０：書き込みしない
+POReadFlg,0,POをキーにして型式情報を抽出する場合、1に設定（SPさん用）
+POAddress,C:\macro\CCC.csv,対象accessファイルの絶対アドレスを入力（SPさん用）
+WorkInfoRecordFlg,0,作業実績を記録する場合1に設定（SPさん用）
+Btn_chgOperator_text,作業者変更,作業者変更ボタン表示設定（SPさん用）
+MachineID,,製造機械ID設定（SPさん用）
+PRO_STATUS_CD,,ステータスコード設定（SPさん用）
+PRO_S_STATUS_CD,,サブステータスコード設定（SPさん用）
+SendFileFormat,1,
+ScreenSizeRatio,100,
+commandtxt,C:\macro\command.txt,
+TopMacro,500,
+EndMacro,600,
+SmacroBrother,C:\SBrotherNcSys\SBrotherNcSys.exe,
+QRmode,1,
+POplc,1,
+MODELplc,2,
+QTYplc,3,
+QRspltStr,@,

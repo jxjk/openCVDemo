@@ -1,0 +1,10 @@
+2026-02-10 13:07:36 - config_manager - ERROR - save_config:267 - 保存配置文件失败: keys must be str, int, float, bool or None, not tuple
+2026-02-10 13:11:03 - InspectionSystemEnhancedGUI - ERROR - _single_inspection:937 - 检测失败: 'DataExporter' object has no attribute 'export_results'
+2026-02-10 13:27:32 - config_manager - ERROR - save_config:267 - 保存配置文件失败: keys must be str, int, float, bool or None, not tuple
+2026-02-10 13:32:56 - InspectionSystemEnhancedGUI - ERROR - _single_inspection:937 - 检测失败: 'DataExporter' object has no attribute 'export_results'
+2026-02-10 13:33:03 - SurfaceDefectDetector - ERROR - _detect_by_texture:331 - 纹理分析检测失败: OpenCV(4.12.0) D:\a\opencv-python\opencv-python\opencv\modules\core\src\minmax.cpp:1161: error: (-215:Assertion failed) func != 0 in function 'cv::minMaxIdx'
+
+2026-02-10 13:33:03 - EdgeDefectDetector - ERROR - _analyze_contour_defects:526 - 轮廓缺陷分析失败: OpenCV(4.12.0) D:\a\opencv-python\opencv-python\opencv\modules\imgproc\src\convhull.cpp:360: error: (-5:Bad argument) The convex hull indices are not monotonous, which can be in the case when the input contour contains self-intersections in function 'cv::convexityDefects'
+
+2026-02-10 13:33:42 - DataExporter - ERROR - calculate_statistics:247 - 计算统计数据失败: False
+2026-02-10 13:33:42 - StatisticsReportWindow - ERROR - _generate_report:440 - 生成报表失败: '总检测数'

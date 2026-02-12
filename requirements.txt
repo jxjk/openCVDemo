@@ -1,0 +1,49 @@
+# 微小零件中高精度视觉检测系统 - Python依赖库
+
+# Web框架
+flask>=2.0.0
+flask-socketio>=5.0.0
+flask-cors>=3.0.0
+eventlet>=0.30.0
+
+# 图像处理库
+opencv-python>=4.5.0
+opencv-contrib-python>=4.5.0
+
+# 数值计算库
+numpy>=1.19.0
+
+# 数据处理库
+pandas>=1.2.0
+
+# 图像处理库
+Pillow>=8.0.0
+
+# Excel文件处理
+openpyxl>=3.0.0
+
+# DXF文件解析（图纸标注功能必需）
+ezdxf>=1.0.0
+
+# SVG文件解析（可选，用于图纸标注）
+# svgpathtools>=1.5.0
+
+# 大恒相机SDK（可选）
+# gxipy>=1.0.0  # 需要先安装大恒相机驱动程序
+
+# 科学计算库（用于缺陷检测算法）
+scipy>=1.5.0
+
+# 绘图库（用于统计报表和可视化）
+matplotlib>=3.3.0
+
+# 进度条库
+tqdm>=4.50.0
+
+# GUI增强库（可选，用于更丰富的界面效果）
+# ttkbootstrap>=1.10.0
+
+# 测试依赖
+pytest>=7.0.0
+pytest-cov>=4.0.0
+coverage>=7.0.0

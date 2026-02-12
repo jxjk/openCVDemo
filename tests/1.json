@@ -1,0 +1,39 @@
+{
+  "name": "test.dxf",
+  "version": "1.0",
+  "created_date": "2026-02-10T13:31:05.042348",
+  "updated_date": "2026-02-10T13:31:05.042556",
+  "image_scale": 1.0,
+  "tolerance_standard": "IT8",
+  "annotations": [
+    {
+      "id": "565ba247-4955-42a8-b4ad-29918c1d37f7",
+      "center": [
+        50.0,
+        100.0
+      ],
+      "radius": 30.0,
+      "feature_type": "diameter",
+      "nominal_value": null,
+      "tolerance": null,
+      "tolerance_standard": "IT8",
+      "description": "圆形特征 (图层: 0)"
+    },
+    {
+      "id": "a5159be4-6ee4-4585-8034-5d43474bdf2d",
+      "start": [
+        0.0,
+        0.0
+      ],
+      "end": [
+        50.0,
+        0.0
+      ],
+      "feature_type": "length",
+      "nominal_value": null,
+      "tolerance": null,
+      "tolerance_standard": "IT8",
+      "description": "线段特征 (图层: 0)"
+    }
+  ]
+}

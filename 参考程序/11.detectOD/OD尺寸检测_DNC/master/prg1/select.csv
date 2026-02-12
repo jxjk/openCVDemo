@@ -1,0 +1,11 @@
+DEFINE,DISPVALUE,SENDVALUE,comment
+select501,AL,1,
+select501,S45C,2,
+select501,SUS,3,
+selectDK,WU,0,
+selectDK,DK,1,
+selectBTCBC,WU,0,
+selectBTCBC,BTC,1,
+selectBTCBC,BC,2,
+selectBC,WU,0,
+selectBC,BC,2,

@@ -1,0 +1,7 @@
+MACRO,KIND,DISPFLG,SENDFLG,AUTOSENDFLG,BTNNAME,CHANGEPRG,comment
+#1,load,0,0,0,,,
+#500,load,1,1,0,,,
+#501,load,1,1,0,,,
+#600,load,1,1,0,,,
+#601,relation,1,1,0,,,
+#602,load,1,1,0,,,
