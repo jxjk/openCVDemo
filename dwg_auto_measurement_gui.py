@@ -216,8 +216,15 @@ class DWGAutoMeasurementGUI:
             
             # 解析DXF
             self._update_status("正在解析DXF...")
+            from drawing_annotation import ToleranceStandard
             parser = DXFParser()
-            self.template = parser.parse_to_template(dxf_file)
+            parser.load(dxf_file)
+            from dxf_parser import DXFToTemplateConverter
+            converter = DXFToTemplateConverter(parser)
+            self.template = converter.convert(
+                template_name=os.path.splitext(os.path.basename(dxf_file))[0],
+                tolerance_standard=ToleranceStandard.IT8
+            )
             
             if self.template is None:
                 self.root.after(0, lambda: messagebox.showerror("错误", "DXF解析失败"))

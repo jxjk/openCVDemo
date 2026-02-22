@@ -1,0 +1,6 @@
+2026-02-22 12:35:03 - __main__ - ERROR - _load_drawing_thread:254 - 加载图纸失败: 'DXFParser' object has no attribute 'parse_to_template'
+2026-02-22 12:35:35 - __main__ - ERROR - _load_drawing_thread:254 - 加载图纸失败: 'DXFParser' object has no attribute 'parse_to_template'
+2026-02-22 12:37:01 - __main__ - ERROR - _load_drawing_thread:254 - 加载图纸失败: 'DXFParser' object has no attribute 'parse_to_template'
+2026-02-22 12:39:56 - auto_measurement - ERROR - _render_dxf_to_image:265 - DXF渲染失败: RGBA values should be within 0-1 range
+2026-02-22 12:44:36 - auto_measurement - ERROR - _render_dxf_to_image:278 - DXF渲染失败: 'Modelspace' object has no attribute 'extent'
+2026-02-22 12:44:36 - auto_measurement - ERROR - _simple_render_dxf:357 - 简化渲染失败: 'Modelspace' object has no attribute 'extent'

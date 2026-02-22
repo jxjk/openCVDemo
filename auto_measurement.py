@@ -25,13 +25,13 @@ from drawing_annotation import (
     CircleAnnotation,
     LineAnnotation,
     FeatureType,
-    ToleranceStandard
+    ToleranceStandard,
+    create_default_template
 )
-from dxf_parser import DXFParser, DXFDimension
+from dxf_parser import DXFParser, DXFDimension, DXFToTemplateConverter
 from dwg_converter import DWGConverter, convert_dwg_to_dxf
 from image_registration import ImageRegistration, TransformationMatrix
-from core_detection import InspectionEngine, InspectionResult
-from config_manager import ConfigManager
+from inspection_system import InspectionEngine, InspectionConfig
 
 logger = get_logger(__name__)
 
@@ -78,15 +78,15 @@ class AutoMeasurementReport:
 class AutoMeasurementEngine:
     """自动测量引擎"""
     
-    def __init__(self, config_manager: Optional[ConfigManager] = None):
+    def __init__(self, config: Optional[InspectionConfig] = None):
         """
         初始化自动测量引擎
         
         Args:
-            config_manager: 配置管理器
+            config: 检测配置
         """
-        self.config_manager = config_manager or ConfigManager()
-        self.inspection_engine = InspectionEngine(self.config_manager.get_config())
+        self.config = config or InspectionConfig()
+        self.inspection_engine = InspectionEngine(self.config)
         self.registration = ImageRegistration()
         self.dwg_converter = DWGConverter()
         self.dxf_parser = DXFParser()
@@ -131,7 +131,12 @@ class AutoMeasurementEngine:
         
         # 2. 解析DXF，提取标注
         logger.info("步骤2: 解析DXF文件")
-        template = self.dxf_parser.parse_to_template(temp_dxf)
+        self.dxf_parser.load(temp_dxf)
+        converter = DXFToTemplateConverter(self.dxf_parser)
+        template = converter.convert(
+            template_name=os.path.splitext(os.path.basename(dwg_file))[0],
+            tolerance_standard=ToleranceStandard.IT8
+        )
         
         if template is None:
             report.message = "DXF解析失败"
@@ -209,18 +214,23 @@ class AutoMeasurementEngine:
         Args:
             dxf_file: DXF文件路径
             image_size: 图像大小
-            background_color: 背景颜色
-            line_color: 线条颜色
+            background_color: 背景颜色 (0-255范围)
+            line_color: 线条颜色 (0-255范围)
             line_width: 线条宽度
         
         Returns:
             渲染的图像
         """
+        # 转换颜色值为matplotlib需要的0-1范围
+        bg_color_norm = tuple(c / 255.0 for c in background_color)
+        
         try:
             import ezdxf
             from ezdxf.addons.drawing import RenderContext, Frontend
             from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
             import matplotlib.pyplot as plt
+            import matplotlib
+            matplotlib.use('Agg')  # 使用非交互式后端
             
             # 加载DXF
             doc = ezdxf.readfile(dxf_file)
@@ -229,11 +239,19 @@ class AutoMeasurementEngine:
             # 创建渲染上下文
             ctx = RenderContext(doc)
             
+            # 获取DXF的边界
+            extents = msp.extent()
+            if extents is None:
+                logger.warning("无法获取DXF边界，使用简化渲染")
+                return self._simple_render_dxf(dxf_file, image_size, background_color, line_color, line_width)
+            
+            min_x, min_y, max_x, max_y = extents
+            
             # 创建matplotlib图像
             fig, ax = plt.subplots(figsize=(image_size[0]/100, image_size[1]/100))
-            ax.set_facecolor(background_color)
-            ax.set_xlim(0, image_size[0])
-            ax.set_ylim(0, image_size[1])
+            ax.set_facecolor(bg_color_norm)
+            ax.set_xlim(min_x, max_x)
+            ax.set_ylim(min_y, max_y)
             ax.set_aspect('equal')
             
             # 渲染
@@ -258,7 +276,8 @@ class AutoMeasurementEngine:
             return self._simple_render_dxf(dxf_file, image_size, background_color, line_color, line_width)
         except Exception as e:
             logger.error(f"DXF渲染失败: {str(e)}")
-            return None
+            logger.info("尝试使用简化渲染方法")
+            return self._simple_render_dxf(dxf_file, image_size, background_color, line_color, line_width)
     
     def _simple_render_dxf(self, dxf_file: str,
                           image_size: Tuple[int, int] = (2000, 2000),
@@ -401,7 +420,7 @@ class AutoMeasurementEngine:
                     # 测量距离
                     measured_value = np.sqrt(
                         (end[0] - start[0])**2 + (end[1] - start[1])**2
-                    ) * self.config_manager.get_config().pixel_to_mm
+                    ) * self.config.PIXEL_TO_MM
                     
                     # 计算偏差
                     deviation = measured_value - annotation.nominal_length
@@ -455,7 +474,7 @@ class AutoMeasurementEngine:
             测量的半径（毫米）
         """
         # 转换为像素
-        pixel_radius = nominal_radius / self.config_manager.get_config().pixel_to_mm
+        pixel_radius = nominal_radius / self.config.PIXEL_TO_MM
         
         # 定义ROI
         x, y = int(center[0]), int(center[1])
@@ -483,7 +502,7 @@ class AutoMeasurementEngine:
             # 取第一个圆
             circle = circles[0][0]
             measured_radius_pixel = circle[2]
-            measured_radius = measured_radius_pixel * self.config_manager.get_config().pixel_to_mm
+            measured_radius = measured_radius_pixel * self.config.PIXEL_TO_MM
             return measured_radius
         else:
             # 未检测到圆，返回标称值
