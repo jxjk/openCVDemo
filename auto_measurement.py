@@ -240,12 +240,18 @@ class AutoMeasurementEngine:
             ctx = RenderContext(doc)
             
             # 获取DXF的边界
-            extents = msp.extent()
-            if extents is None:
-                logger.warning("无法获取DXF边界，使用简化渲染")
-                return self._simple_render_dxf(dxf_file, image_size, background_color, line_color, line_width)
+            try:
+                # 尝试使用ezdxf的边界计算
+                from ezdxf.bbox import extents as bbox_extents
+                bbox = bbox_extents(msp)
+                min_x, min_y, min_z = bbox[0]
+                max_x, max_y, max_z = bbox[1]
+            except:
+                # 如果失败，使用默认范围
+                min_x, min_y = 0, 0
+                max_x, max_y = image_size[0], image_size[1]
             
-            min_x, min_y, max_x, max_y = extents
+            logger.info(f"DXF边界: ({min_x:.2f}, {min_y:.2f}) to ({max_x:.2f}, {max_y:.2f})")
             
             # 创建matplotlib图像
             fig, ax = plt.subplots(figsize=(image_size[0]/100, image_size[1]/100))
@@ -260,9 +266,17 @@ class AutoMeasurementEngine:
             
             # 转换为OpenCV图像
             fig.canvas.draw()
-            img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-            img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            # 使用buffer_to_rgb代替tostring_rgb（新版本matplotlib）
+            try:
+                img = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
+                img = img.reshape(fig.canvas.get_width_height()[::-1] + (4,))
+                img = img[:, :, :3]  # 去掉alpha通道
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            except AttributeError:
+                # 旧版本matplotlib
+                img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+                img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             
             plt.close(fig)
             
@@ -308,11 +322,16 @@ class AutoMeasurementEngine:
             img = np.full((image_size[1], image_size[0], 3), background_color, dtype=np.uint8)
             
             # 获取边界
-            extents = msp.extent()
-            if extents is None:
-                return img
+            try:
+                from ezdxf.bbox import extents as bbox_extents
+                bbox = bbox_extents(msp)
+                min_x, min_y, min_z = bbox[0]
+                max_x, max_y, max_z = bbox[1]
+            except:
+                # 使用默认范围
+                min_x, min_y = 0, 0
+                max_x, max_y = image_size[0], image_size[1]
             
-            min_x, min_y, max_x, max_y = extents
             width = max_x - min_x
             height = max_y - min_y
             
@@ -331,20 +350,21 @@ class AutoMeasurementEngine:
             # 绘制实体
             for entity in msp:
                 if entity.dxftype() == 'LINE':
-                    start = entity.start
-                    end = entity.end
+                    # 使用dxf属性而不是start/end属性
+                    start = (entity.dxf.start[0], entity.dxf.start[1])
+                    end = (entity.dxf.end[0], entity.dxf.end[1])
                     pt1 = (int(start[0] * scale + offset_x), int(image_size[1] - (start[1] * scale + offset_y)))
                     pt2 = (int(end[0] * scale + offset_x), int(image_size[1] - (end[1] * scale + offset_y)))
                     cv2.line(img, pt1, pt2, line_color, line_width)
                 
                 elif entity.dxftype() == 'CIRCLE':
-                    center = entity.center
+                    center = (entity.dxf.center[0], entity.dxf.center[1])
                     radius = entity.dxf.radius * scale
                     center_pt = (int(center[0] * scale + offset_x), int(image_size[1] - (center[1] * scale + offset_y)))
                     cv2.circle(img, center_pt, int(radius), line_color, line_width)
                 
                 elif entity.dxftype() == 'ARC':
-                    center = entity.center
+                    center = (entity.dxf.center[0], entity.dxf.center[1])
                     radius = entity.dxf.radius * scale
                     center_pt = (int(center[0] * scale + offset_x), int(image_size[1] - (center[1] * scale + offset_y)))
                     start_angle = entity.dxf.start_angle

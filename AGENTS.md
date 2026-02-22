@@ -39,6 +39,9 @@
 | `data_export.py` | 核心模块 | 数据导出（Excel、CSV）和统计计算 |
 | `drawing_annotation.py` | 核心模块 | 图纸标注和基于标注的检测 |
 | `dxf_parser.py` | 核心模块 | DXF文件解析和模板转换 |
+| `dwg_converter.py` | 核心模块 | DWG文件转换模块，支持DWG转DXF |
+| `image_registration.py` | 核心模块 | 图像配准模块，支持多种特征检测和变换方法 |
+| `auto_measurement.py` | 核心模块 | 自动测量引擎，基于DWG/DXF图纸自动测量 |
 | `exceptions.py` | 核心模块 | 异常定义和处理 |
 | `logger_config.py` | 核心模块 | 日志配置 |
 
@@ -52,6 +55,7 @@
 | `result_visualization_gui.py` | GUI工具 | 检测结果可视化GUI（PyQt5） |
 | `config_editor_gui.py` | GUI工具 | 配置管理GUI（PyQt5） |
 | `inspection_system_gui_v2.py` | GUI工具 | 图纸标注工具（Tkinter） |
+| `dwg_auto_measurement_gui.py` | GUI工具 | DWG自动测量GUI，集成图纸解析、图像配准和自动测量功能 |
 
 ### Web版本
 
@@ -67,6 +71,7 @@
 | `图纸检测部位标定方案.md` | 技术方案 | 2D/3D图纸检测部位预先标定的实现方案和代码示例 |
 | `产品进化接口设计方案.md` | 架构设计 | 系统架构设计和可扩展接口方案，包含完整的Python接口代码 |
 | `亚像素IT5级精度检测分析.md` | 技术分析 | IT5级精度检测的可行性分析，包含Zernike矩等高级算法实现代码 |
+| `DWG_AUTO_MEASUREMENT_GUIDE.md` | 使用文档 | DWG自动测量功能使用指南，包含完整的操作流程和API文档 |
 | `README_V3.md` | 使用文档 | V3.0版本说明文档 |
 | `README.md` | 使用文档 | 项目总体说明文档 |
 | `USAGE_GUIDE.md` | 使用文档 | 详细使用指南和API文档 |
@@ -96,6 +101,7 @@
 | 目录/文件 | 内容描述 |
 |-----------|----------|
 | `tests/` | 单元测试目录 |
+| `tests/test_auto_measurement.py` | DWG自动测量功能单元测试 |
 | `test_new_features.py` | 新功能测试脚本 |
 | `run_tests.py` | 单元测试运行脚本（支持运行所有测试或特定测试文件） |
 | `requirements.txt` | Python依赖库列表 |
@@ -289,6 +295,36 @@
   - 路径配置
   - 相机参数
 
+### 10. DWG自动测量（V3.1新增）
+- **模块：** `dwg_converter.py`, `image_registration.py`, `auto_measurement.py`, `dwg_auto_measurement_gui.py`
+- **功能：**
+  - DWG文件自动转换为DXF（可选，需要ODA File Converter）
+  - DXF图纸自动解析和标注提取
+  - 图纸渲染为图像
+  - 图像配准（ORB/SIFT/SURF/AKAZE特征检测）
+  - 基于图纸的自动测量
+  - 测量报告生成（JSON + 文本格式）
+- **GUI工具：** `dwg_auto_measurement_gui.py`
+  - 4步操作流程：加载图纸 → 加载图像 → 图像配准 → 自动测量
+  - 实时进度显示
+  - 可视化配准结果
+  - 测量结果表格展示
+  - 报告导出功能
+- **使用流程：**
+  1. 加载DWG/DXF文件
+  2. 系统自动解析图纸标注
+  3. 加载待测零件图像
+  4. 图纸与图像自动配准
+  5. 基于标注自动测量
+  6. 生成详细测量报告
+- **技术特性：**
+  - 支持多种特征检测算法（ORB、SIFT、SURF、AKAZE）
+  - 支持多种变换方法（单应性、仿射、相似、平移）
+  - 自动提取尺寸标注信息
+  - 支持圆形和线段测量
+  - 自动计算偏差和合格性判断
+  - 详细的测量结果报告
+
 ---
 
 ## 系统架构
@@ -304,6 +340,7 @@
 │  - camera_preview_gui.py (实时预览)                │
 │  - result_visualization_gui.py (结果可视化)        │
 │  - config_editor_gui.py (配置管理)                 │
+│  - dwg_auto_measurement_gui.py (DWG自动测量)       │
 │  - inspection_web_v2.py (Web版本)                  │
 └──────────────────┬──────────────────────────────────┘
                    │
@@ -314,13 +351,18 @@
 │  - inspection_system.py (检测引擎)                 │
 │  - data_export.py (数据导出)                       │
 │  - drawing_annotation.py (图纸标注)                │
+│  - auto_measurement.py (自动测量)                  │
+│  - dwg_converter.py (DWG转换)                      │
+│  - image_registration.py (图像配准)                │
 └──────────────────┬──────────────────────────────────┘
                    │
 ┌──────────────────▼──────────────────────────────────┐
 │         核心算法层                                  │
 │  - core_detection.py (检测算法)                    │
+│  - dxf_parser.py (DXF解析)                         │
 │  - 亚像素检测 (cornerSubPix, 1/20像素)             │
 │  - 几何拟合 (最小二乘法、RANSAC)                   │
+│  - 特征检测 (ORB/SIFT/SURF/AKAZE)                 │
 └──────────────────┬──────────────────────────────────┘
                    │
 ┌──────────────────▼──────────────────────────────────┐
@@ -332,6 +374,7 @@
 
 ### 数据流程
 
+**标准检测流程：**
 ```
 相机采集 → 预处理 → 边缘检测 → 轮廓提取 → 尺寸计算 → 公差判断 → 结果输出
     ↓         ↓          ↓          ↓          ↓          ↓          ↓
@@ -342,6 +385,15 @@
   缺陷检测
     ↓
   质量评分
+```
+
+**DWG自动测量流程：**
+```
+DWG文件 → 转换DXF → 解析标注 → 渲染图纸
+                                       ↓
+图像文件 ─────────────────────→ 图像配准 → 坐标转换
+                                       ↓
+                             自动测量 → 生成报告
 ```
 
 ---
@@ -420,6 +472,9 @@ pip install -r requirements.txt
 # 启动增强版GUI（推荐）
 python inspection_gui_enhanced.py
 
+# 启动DWG自动测量GUI（V3.1新增）
+python dwg_auto_measurement_gui.py
+
 # 启动Web版本
 python inspection_web_v2.py
 
@@ -438,6 +493,7 @@ python run_tests.py test_config_manager
 python run_tests.py test_core_detection
 python run_tests.py test_data_export
 python run_tests.py test_exceptions
+python run_tests.py test_auto_measurement
 
 # 测试新功能
 python test_new_features.py
@@ -505,6 +561,68 @@ python -m pytest tests/ --cov=. --cov-report=html
 5. 标定
 6. 应用到系统
 
+### DWG自动测量流程（V3.1新增）
+
+**使用GUI：**
+```bash
+python dwg_auto_measurement_gui.py
+```
+
+**操作步骤：**
+1. **加载图纸**：点击"加载图纸"按钮，选择DWG或DXF文件
+   - DWG文件会自动转换为DXF（需要ODA File Converter）
+   - 系统自动解析图纸标注
+   - 显示提取的标注数量
+
+2. **加载图像**：点击"加载图像"按钮，选择待测量的零件图像
+   - 支持常见图像格式（JPG、PNG、BMP等）
+
+3. **图像配准**：点击"图像配准"按钮
+   - 系统自动检测特征点
+   - 计算变换矩阵
+   - 显示配准置信度
+   - 可视化配准结果
+
+4. **自动测量**：点击"自动测量"按钮
+   - 基于图纸标注自动测量
+   - 计算偏差和合格性
+   - 显示测量结果表格
+
+5. **导出报告**：点击"导出报告"按钮
+   - 生成JSON格式报告
+   - 生成文本格式报告
+   - 保存到指定目录
+
+**命令行使用：**
+```bash
+# DWG转换
+python dwg_converter.py input.dwg output.dxf
+
+# 自动测量
+python auto_measurement.py part.dwg part.jpg ./reports
+
+# 或使用DXF文件
+python auto_measurement.py part.dxf part.jpg ./reports
+```
+
+**代码集成：**
+```python
+from auto_measurement import AutoMeasurementEngine
+
+# 创建测量引擎
+engine = AutoMeasurementEngine()
+
+# 执行测量
+report = engine.measure_from_dwg("part.dwg", "part.jpg", "./reports")
+
+# 查看结果
+print(f"配准成功: {report.registration_success}")
+print(f"配准置信度: {report.registration_confidence}")
+print(f"测量特征数: {report.measured_features}")
+for result in report.measurement_results:
+    print(f"{result.feature_name}: {result.measured_value}mm, 偏差: {result.deviation}mm")
+```
+
 ---
 
 ## 关键特性
@@ -558,6 +676,15 @@ python -m pytest tests/ --cov=. --cov-report=html
 - 可配置报警参数
 - 支持硬件设备集成
 
+### 9. DWG自动测量（V3.1新增）
+- 支持DWG/DXF图纸导入
+- 自动解析尺寸标注
+- 智能图像配准
+- 基于图纸的自动测量
+- 生成详细测量报告
+- 图形化操作界面
+- 命令行和代码集成支持
+
 ---
 
 ## 开发指南
@@ -588,6 +715,9 @@ python -m pytest tests/ --cov=. --cov-report=html
 │   ├── data_export.py               # 数据导出
 │   ├── drawing_annotation.py        # 图纸标注
 │   ├── dxf_parser.py                # DXF解析
+│   ├── dwg_converter.py            # DWG转换（V3.1新增）
+│   ├── image_registration.py       # 图像配准（V3.1新增）
+│   ├── auto_measurement.py          # 自动测量（V3.1新增）
 │   ├── exceptions.py                # 异常定义
 │   └── logger_config.py             # 日志配置
 ├── GUI工具/
@@ -596,7 +726,8 @@ python -m pytest tests/ --cov=. --cov-report=html
 │   ├── camera_preview_gui.py        # 实时预览
 │   ├── result_visualization_gui.py  # 结果可视化
 │   ├── config_editor_gui.py         # 配置管理
-│   └── inspection_system_gui_v2.py  # 图纸标注
+│   ├── inspection_system_gui_v2.py  # 图纸标注
+│   └── dwg_auto_measurement_gui.py  # DWG自动测量（V3.1新增）
 ├── Web版本/
 │   └── inspection_web_v2.py         # Web应用
 ├── 文档/
@@ -604,6 +735,7 @@ python -m pytest tests/ --cov=. --cov-report=html
 │   ├── 图纸检测部位标定方案.md
 │   ├── 产品进化接口设计方案.md
 │   ├── 亚像素IT5级精度检测分析.md
+│   ├── DWG_AUTO_MEASUREMENT_GUIDE.md  # DWG自动测量指南（V3.1新增）
 │   ├── README_V3.md
 │   ├── USAGE_GUIDE.md
 │   ├── GUI_MODULES_USAGE.md
@@ -616,6 +748,7 @@ python -m pytest tests/ --cov=. --cov-report=html
 │   │   ├── test_core_detection.py
 │   │   ├── test_data_export.py
 │   │   ├── test_exceptions.py
+│   │   ├── test_auto_measurement.py  # DWG自动测量测试（V3.1新增）
 │   │   └── __init__.py
 │   ├── test_new_features.py
 │   └── run_tests.py
@@ -662,6 +795,7 @@ python -m pytest tests/ --cov=. --cov-report=html
 - `test_core_detection.py` - 核心检测算法测试
 - `test_data_export.py` - 数据导出测试
 - `test_exceptions.py` - 异常处理测试
+- `test_auto_measurement.py` - DWG自动测量功能测试（V3.1新增）
 
 ### 贡献指南
 
@@ -720,6 +854,30 @@ pip install pytest pytest-cov coverage
 ```bash
 python run_tests.py
 ```
+
+### Q7: DWG文件无法转换？
+
+**A**: DWG转换需要ODA File Converter：
+- 下载ODA File Converter（免费工具）
+- 安装后系统会自动检测
+- 或者手动将DWG转换为DXF后使用
+
+### Q8: 图像配准失败？
+
+**A**: 检查以下内容：
+- 确保图纸和图像包含足够的特征点
+- 检查光照条件是否一致
+- 尝试不同的特征检测算法（ORB/SIFT/SURF/AKAZE）
+- 确保图纸和图像的拍摄角度相似
+
+### Q9: DWG自动测量测量结果不准确？
+
+**A**: 优化测量精度：
+- 进行像素-毫米标定
+- 使用高质量的图纸和图像
+- 确保图纸标注准确
+- 检查配准置信度是否足够高（建议>0.7）
+- 使用亚像素检测提高精度
 
 ---
 
@@ -795,6 +953,7 @@ python run_tests.py
 - V3.0 (2026-02-10): 添加IT5级精度检测分析文档，更新参考程序说明，完善技术栈描述
 - V4.0 (2026-02-10): 更新为V3.0生产可用版本，添加批量检测、缺陷检测、声光报警等功能，完善GUI工具集
 - V4.1 (2026-02-22): 更新文档信息，确认当前项目状态和测试运行方式
+- V5.0 (2026-02-22): 添加DWG自动测量功能，支持基于图纸的自动检测和测量
 
 ---
 
@@ -846,6 +1005,57 @@ python run_tests.py
 - 补充常见问题解答
 - 添加归档目录说明
 - 更新最后更新日期
+
+### V5.0 (2026-02-22)
+
+**重大更新：DWG自动测量功能**
+
+**新增核心模块：**
+- `dwg_converter.py` - DWG文件转换模块，支持DWG转DXF
+- `image_registration.py` - 图像配准模块，支持多种特征检测和变换方法
+- `auto_measurement.py` - 自动测量引擎，基于DWG/DXF图纸自动测量
+
+**新增GUI工具：**
+- `dwg_auto_measurement_gui.py` - DWG自动测量GUI，集成图纸解析、图像配准和自动测量功能
+
+**新增功能：**
+- DWG文件自动转换为DXF（可选，需要ODA File Converter）
+- DXF图纸自动解析和标注提取
+- 图纸渲染为图像
+- 图像配准（ORB/SIFT/SURF/AKAZE特征检测）
+- 基于图纸的自动测量
+- 测量报告生成（JSON + 文本格式）
+
+**新增文档：**
+- `DWG_AUTO_MEASUREMENT_GUIDE.md` - DWG自动测量功能使用指南
+
+**新增测试：**
+- `tests/test_auto_measurement.py` - DWG自动测量功能单元测试
+
+**技术特性：**
+- 支持多种特征检测算法（ORB、SIFT、SURF、AKAZE）
+- 支持多种变换方法（单应性、仿射、相似、平移）
+- 自动提取尺寸标注信息
+- 支持圆形和线段测量
+- 自动计算偏差和合格性判断
+- 详细的测量结果报告
+
+**使用方式：**
+- GUI界面：4步操作流程（加载图纸 → 加载图像 → 图像配准 → 自动测量）
+- 命令行：支持直接命令调用
+- 代码集成：提供完整的Python API
+
+**改进：**
+- 修复matplotlib API兼容性问题
+- 修复ezdxf API兼容性问题
+- 完善异常处理机制
+- 增强日志系统
+
+**修复：**
+- 修复DWG边界获取错误
+- 修复DXF渲染颜色范围错误
+- 修复Line对象属性访问错误
+- 修复FigureCanvasAgg API兼容性问题
 
 ---
 
