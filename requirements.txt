@@ -47,3 +47,29 @@ tqdm>=4.50.0
 pytest>=7.0.0
 pytest-cov>=4.0.0
 coverage>=7.0.0
+
+# =============================================================================
+# DWG自动测量功能依赖
+# =============================================================================
+# 以下依赖已包含在上面的列表中，但DWG自动测量功能特别需要：
+#
+# 1. DXF解析:
+#    - ezdxf>=1.0.0 (必需) - 用于解析DXF文件
+#
+# 2. 图像处理:
+#    - opencv-python>=4.5.0 (必需) - 图像处理和特征检测
+#    - opencv-contrib-python>=4.5.0 (必需) - SIFT/SURF特征提取
+#    - numpy>=1.19.0 (必需) - 数值计算
+#
+# 3. 图像渲染:
+#    - matplotlib>=3.3.0 (推荐) - DXF渲染为图像
+#    - Pillow>=8.0.0 (必需) - 图像格式转换
+#
+# 4. DWG转换:
+#    - 需要外部工具: ODA File Converter (可选，用于DWG转DXF)
+#      下载地址: https://www.opendesign.com/guestfiles/oda_file_converter
+#
+# 注意: 
+# - 如果系统检测不到ODA File Converter，用户需要手动将DWG转换为DXF
+# - SIFT和SURF特征需要opencv-contrib-python模块
+# - 某些高级功能可能需要额外的依赖，请参考各模块的文档

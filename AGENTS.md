@@ -8,7 +8,11 @@
 
 **创建日期：** 2026年2月9日
 
+**最后更新：** 2026年2月22日
+
 **项目状态：** V3.0 生产可用版本
+
+**Git仓库：** https://github.com/jxjk/openCVDemo.git
 
 **精度目标：** IT8级（中等高精度，比IT11级提升约4倍）
 
@@ -64,12 +68,21 @@
 | `产品进化接口设计方案.md` | 架构设计 | 系统架构设计和可扩展接口方案，包含完整的Python接口代码 |
 | `亚像素IT5级精度检测分析.md` | 技术分析 | IT5级精度检测的可行性分析，包含Zernike矩等高级算法实现代码 |
 | `README_V3.md` | 使用文档 | V3.0版本说明文档 |
+| `README.md` | 使用文档 | 项目总体说明文档 |
 | `USAGE_GUIDE.md` | 使用文档 | 详细使用指南和API文档 |
 | `GUI_MODULES_USAGE.md` | 使用文档 | GUI模块使用指南 |
 | `CODE_STYLE.md` | 开发文档 | 代码规范和最佳实践 |
 | `REFACTORING_REPORT.md` | 开发文档 | 代码重构报告 |
 | `INSTALL.md` | 安装文档 | 安装和配置指南 |
 | `DOCKER_DEPLOY.md` | 部署文档 | Docker部署指南 |
+
+### 归档目录
+
+| 目录名 | 内容描述 |
+|--------|----------|
+| `archive/` | 历史版本归档，包含旧版本的GUI和测试文件 |
+| `archive/old_versions/` | 旧版本的GUI实现文件 |
+| `archive/test_files/` | 测试辅助文件 |
 
 ### 参考程序目录
 
@@ -84,8 +97,10 @@
 |-----------|----------|
 | `tests/` | 单元测试目录 |
 | `test_new_features.py` | 新功能测试脚本 |
+| `run_tests.py` | 单元测试运行脚本（支持运行所有测试或特定测试文件） |
 | `requirements.txt` | Python依赖库列表 |
 | `config.json` | 系统配置文件 |
+| `install_dependencies.bat` | Windows依赖安装脚本 |
 | `data/` | 数据目录（检测结果、图像） |
 | `templates/` | Web模板目录 |
 | `logs/` | 日志目录 |
@@ -379,9 +394,25 @@
 
 ### 安装依赖
 
+**Windows用户（推荐）：**
+```bash
+# 双击运行安装脚本
+install_dependencies.bat
+```
+
+**手动安装：**
 ```bash
 pip install -r requirements.txt
 ```
+
+**依赖库包括：**
+- Web框架：Flask, Flask-SocketIO, Flask-CORS, eventlet
+- 图像处理：OpenCV, NumPy, SciPy, Pillow
+- 数据处理：Pandas, openpyxl
+- CAD解析：ezdxf
+- 可视化：Matplotlib
+- 测试框架：Pytest, pytest-cov, coverage
+- 其他工具：tqdm
 
 ### 启动程序
 
@@ -399,13 +430,20 @@ python inspection_system_gui_v2.py
 ### 运行测试
 
 ```bash
+# 运行所有单元测试（推荐）
+python run_tests.py
+
+# 运行特定测试文件
+python run_tests.py test_config_manager
+python run_tests.py test_core_detection
+python run_tests.py test_data_export
+python run_tests.py test_exceptions
+
 # 测试新功能
 python test_new_features.py
 
-# 运行单元测试
+# 或使用pytest（如果已安装）
 python -m pytest tests/ -v
-
-# 运行覆盖率测试
 python -m pytest tests/ --cov=. --cov-report=html
 ```
 
@@ -574,15 +612,26 @@ python -m pytest tests/ --cov=. --cov-report=html
 │   └── DOCKER_DEPLOY.md
 ├── 测试/
 │   ├── tests/
-│   └── test_new_features.py
+│   │   ├── test_config_manager.py
+│   │   ├── test_core_detection.py
+│   │   ├── test_data_export.py
+│   │   ├── test_exceptions.py
+│   │   └── __init__.py
+│   ├── test_new_features.py
+│   └── run_tests.py
 ├── 配置/
 │   ├── requirements.txt
 │   ├── config.json
-│   └── docker-compose.yml
+│   ├── install_dependencies.bat
+│   ├── docker-compose.yml
+│   └── Dockerfile
 ├── 数据/
 │   ├── data/
 │   ├── templates/
 │   └── logs/
+├── 部署/
+│   ├── nginx.conf
+│   └── DOCKER_DEPLOY.md
 └── 参考程序/
     ├── 11.detectOD/
     └── 7.chiCunJianCe.demo/
@@ -591,15 +640,28 @@ python -m pytest tests/ --cov=. --cov-report=html
 ### 测试
 
 ```bash
-# 运行所有测试
-python -m pytest tests/ -v
+# 运行所有单元测试（推荐）
+python run_tests.py
 
-# 运行覆盖率测试
-python -m pytest tests/ --cov=. --cov-report=html
+# 运行特定测试文件
+python run_tests.py test_config_manager
+python run_tests.py test_core_detection
+python run_tests.py test_data_export
+python run_tests.py test_exceptions
 
 # 测试新功能
 python test_new_features.py
+
+# 或使用pytest（如果已安装）
+python -m pytest tests/ -v
+python -m pytest tests/ --cov=. --cov-report=html
 ```
+
+**测试文件列表：**
+- `test_config_manager.py` - 配置管理器测试
+- `test_core_detection.py` - 核心检测算法测试
+- `test_data_export.py` - 数据导出测试
+- `test_exceptions.py` - 异常处理测试
 
 ### 贡献指南
 
@@ -645,6 +707,18 @@ python test_new_features.py
 **A**: 确保已安装PyQt5：
 ```bash
 pip install PyQt5
+```
+
+### Q6: Windows环境下运行测试报错？
+
+**A**: 确保已安装pytest和相关依赖：
+```bash
+pip install pytest pytest-cov coverage
+```
+
+或者使用项目提供的测试运行脚本：
+```bash
+python run_tests.py
 ```
 
 ---
@@ -709,15 +783,18 @@ pip install PyQt5
 
 **文档创建：** 2026年2月9日
 
+**最后更新：** 2026年2月22日
+
 **维护周期：** 根据项目进展定期更新
 
-**版本控制：** 建议使用Git进行文档版本管理
+**版本控制：** 使用Git进行文档版本管理（当前仓库: https://github.com/jxjk/openCVDemo.git）
 
 **更新记录：**
 - V1.0 (2026-02-09): 初始版本，IT11级精度目标
 - V2.0 (2026-02-09): 升级至IT8级精度目标，添加亚像素检测支持
 - V3.0 (2026-02-10): 添加IT5级精度检测分析文档，更新参考程序说明，完善技术栈描述
 - V4.0 (2026-02-10): 更新为V3.0生产可用版本，添加批量检测、缺陷检测、声光报警等功能，完善GUI工具集
+- V4.1 (2026-02-22): 更新文档信息，确认当前项目状态和测试运行方式
 
 ---
 
@@ -758,6 +835,17 @@ pip install PyQt5
 - 修复配置文件JSON序列化问题
 - 修复凸包索引非单调错误
 - 修复统计数据计算失败问题
+
+### V4.1 (2026-02-22)
+
+**文档更新：**
+- 更新项目文档，反映当前状态
+- 添加Git仓库信息
+- 完善测试运行说明，添加run_tests.py脚本使用说明
+- 更新依赖安装方式，添加Windows安装脚本
+- 补充常见问题解答
+- 添加归档目录说明
+- 更新最后更新日期
 
 ---
 
